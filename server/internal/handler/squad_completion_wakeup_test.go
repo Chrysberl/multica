@@ -17,7 +17,7 @@ func TestSquadNoActionWorkerCompletion(t *testing.T) {
 	if testHandler == nil || testPool == nil {
 		t.Skip("database not available")
 	}
-	for _, order := range []string{"after_leader", "before_evaluation", "while_leader", "ordinary_queued", "leader_queued", "merged_member", "merged_workers", "before_claim", "completion_commit_after_claim", "disabled", "deleted", "rotated", "closed", "failed", "cancelled", "contention", "wrong_source", "historical", "capacity", "reenabled"} {
+	for _, order := range []string{"after_leader", "individually_assigned", "before_evaluation", "while_leader", "ordinary_queued", "leader_queued", "merged_member", "merged_workers", "before_claim", "completion_commit_after_claim", "disabled", "deleted", "rotated", "closed", "failed", "cancelled", "contention", "wrong_source", "historical", "capacity", "reenabled"} {
 		t.Run(order, func(t *testing.T) {
 			ctx := context.Background()
 			runtimeID := dbfx.Runtime(t, "Completion leader runtime")
@@ -27,6 +27,9 @@ func TestSquadNoActionWorkerCompletion(t *testing.T) {
 			squadID := dbfx.Squad(t, "Completion squad", leaderID)
 			dbfx.SquadMember(t, squadID, "agent", workerID)
 			issueID := dbfx.Issue(t, "Coordinate remaining work", testutil.Cols{"status": "in_progress", "assignee_type": "squad", "assignee_id": squadID})
+			if order == "individually_assigned" {
+				dbfx.Exec(t, "UPDATE issue SET assignee_type='agent',assignee_id=$2 WHERE id=$1", issueID, leaderID)
+			}
 			sourceID := dbfx.Task(t, leaderID, testutil.Cols{"runtime_id": runtimeID, "issue_id": issueID, "status": "completed", "is_leader_task": true, "squad_id": squadID, "originator_user_id": testUserID, "accountable_user_id": testUserID})
 			rootID := dbfx.Comment(t, issueID, "Review the implementation", testutil.Cols{"author_type": "agent", "author_id": leaderID, "source_task_id": sourceID})
 			workerTaskID := dbfx.Task(t, workerID, testutil.Cols{"runtime_id": workerRuntime, "issue_id": issueID, "status": "running", "started_at": testutil.Raw("now()"), "trigger_comment_id": rootID, "delegated_from_task_id": sourceID, "squad_id": squadID, "originator_user_id": testUserID, "accountable_user_id": testUserID})
@@ -255,7 +258,7 @@ func TestSquadNoActionWorkerCompletion(t *testing.T) {
 
 func claimSquadCompletionRun(t *testing.T, runtimeID string) *AgentTaskResponse {
 	t.Helper()
-	req := withURLParam(newDaemonTokenRequest(http.MethodPost, "/api/daemon/runtimes/"+runtimeID+"/tasks/claim", nil, testWorkspaceID, "completion-test"), "runtimeId", runtimeID)
+	req := withURLParam(newOwnerDaemonRequest(http.MethodPost, "/api/daemon/runtimes/"+runtimeID+"/tasks/claim", nil), "runtimeId", runtimeID)
 	req.Header.Set("X-Client-Capabilities", protocol.DaemonCapabilityCoalescedCommentsV1+","+protocol.DaemonCapabilityJoinedWakeupsV1)
 	var response struct {
 		Task *AgentTaskResponse `json:"task"`
