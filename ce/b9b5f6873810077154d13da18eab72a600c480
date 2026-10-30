@@ -1,0 +1,23 @@
+server/pkg/agent/claude.go
+  s_f31b5f41c660b1::t_518212ee4bc0d3 231-244,354-356,373-375,379-386
+server/pkg/agent/claude_deadlock_test.go
+  s_f31b5f41c660b1::t_ca52d0b5b1636f 67-69
+server/pkg/agent/claude_supplement_test.go
+  s_f31b5f41c660b1::t_c84f2b983949e9 13,411-524
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.4",
+  "base_commit_sha": "ceb9b5f6873810077154d13da18eab72a600c480",
+  "prompts": {},
+  "sessions": {
+    "s_f31b5f41c660b1": {
+      "agent_id": {
+        "tool": "codex",
+        "id": "01a18bef-8979-7581-825b-2f2463a4c2f6",
+        "model": "gpt-6-astra"
+      },
+      "human_author": "Chrysberl <101306351+Chrysberl@users.noreply.github.com>"
+    }
+  }
+}
